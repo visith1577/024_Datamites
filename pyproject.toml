@@ -1,0 +1,25 @@
+[project]
+name = "politicalanalyst"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "llama-index>=0.11.9",
+    "llama-index-core>=0.11.10",
+    "llama-index-utils-workflow>=0.2.1",
+    "llama-index-readers-file>=0.2.1",
+    "colorama>=0.4.6",
+    "python-dotenv>=1.0.1",
+    "llama-index-readers-web>=0.2.2",
+    "llama-index-tools-tavily-research>=0.2.0",
+    "streamlit>=1.38.0",
+    "llama-index-llms-openai>=0.2.7",
+    "llama-index-embeddings-openai>=0.2.5",
+    "openai>=1.45.1",
+    "newsdataapi>=0.1.21",
+    "pymupdf>=1.24.10",
+    "exa-py>=1.1.4",
+    "plotly>=5.24.1",
+    "flask>=3.0.3",
+]
