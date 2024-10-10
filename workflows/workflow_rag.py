@@ -5,8 +5,9 @@ from llama_index.core import (
     SimpleDirectoryReader,
     VectorStoreIndex,
     StorageContext,
-    load_index_from_storage
+    load_index_from_storage,
 )
+
 from llama_index.core.tools import (
     QueryEngineTool,
     ToolMetadata
@@ -20,7 +21,8 @@ from llama_index.core.workflow import (
 )
 
 from workflows.event import QueryEvent, AnswerEvent
-
+from llama_index.core.settings import Settings
+from workflows.client import vector_store, chunk_markdown_by_headers, chunk_pdf_by_size
 from llama_index.core.agent import ReActAgent
 from dotenv import load_dotenv 
 
@@ -140,6 +142,12 @@ def prepare_query_engine(documents_folder: str):
     # name of sub directory is the metadata discription
     query_engine_tools = []
 
+    tool_descriptions = {
+        "NPP_manifesto": "Information about Anura Kumara Disanayake NPP Manifesto",
+        "SJB_manifesto": "Information about Sajith Premadasa SJB Manifesto",
+        "UNP_manifesto": "Information about Ranil Wickramasinghe UNP Manifesto",
+        "election_summary": "Summary of presidential elections 2024"
+    }
 
     for subdir in os.listdir(documents_folder):
         subdir_path = os.path.join(documents_folder, subdir)
@@ -147,13 +155,33 @@ def prepare_query_engine(documents_folder: str):
             index_persist_path = f"./storage/{subdir}/"
 
             if os.path.exists(index_persist_path):
-                storage_context = StorageContext.from_defaults(persist_dir=index_persist_path)
+                storage_context = StorageContext.from_defaults(vector_store=vector_store)
                 index = load_index_from_storage(storage_context)
             else:
                 input_files = [os.path.join(subdir_path, file) for file in os.listdir(subdir_path)]
-                documents = CustomDirectoryReader(input_files=input_files).load_data()
-                index = VectorStoreIndex.from_documents(documents)
-                index.storage_context.persist(index_persist_path)
+
+                for i in input_files:
+                    print(i)
+
+                documents = []
+                for file_path in input_files:
+                    print(repr(file_path))
+                    if file_path.endswith('.md'):
+                        # Process markdown file
+                        with open(file_path, 'r', encoding='utf-8') as f:
+                            content = f.read()
+                            doc_chunks = chunk_markdown_by_headers(content)
+                    elif file_path.endswith('.pdf'):
+                        # Process PDF file
+                        doc_chunks = chunk_pdf_by_size(file_path)
+                    else:
+                        continue
+
+                    # Create LlamaIndex document objects from chunks
+                    for chunk in doc_chunks:
+                        documents.append(Document(text=chunk['text'], doc_id=chunk['id']))
+
+                index = VectorStoreIndex.from_documents(documents, vector_store=vector_store)
 
             engine = index.as_query_engine()
             query_engine_tools.append(
@@ -161,7 +189,7 @@ def prepare_query_engine(documents_folder: str):
                     query_engine=engine,
                     metadata=ToolMetadata(
                         name=subdir,
-                        description=f"Information about {subdir}",
+                        description=f"Information about {tool_descriptions[subdir.strip(' ')]}",
                     ),
                 )
             )
