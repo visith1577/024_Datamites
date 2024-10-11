@@ -20,7 +20,9 @@ dependencies = [
     "newsdataapi>=0.1.21",
     "pymupdf>=1.24.10",
     "exa-py>=1.1.4",
-    "fastapi",
+    "fastapi[standard]",
     "qdrant-client>=1.12.0",
     "llama-index-vector-stores-qdrant>=0.3.0",
+    "ipykernel>=6.29.5",
+    "pydantic>=2.9.1",
 ]

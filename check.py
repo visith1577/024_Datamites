@@ -1,9 +1,12 @@
 from workflows.workflow_init import rag_main
 import asyncio
 
-output = asyncio.run(rag_main(
-        query="Provide a brief summary of the presidential elections"
-    )
-)
 
-print(output)
+if __name__ == "__main__":
+    try:
+        while True:
+            query = input("Enter your query: ")
+            output = asyncio.run(rag_main(query=query))
+            print(output)
+    except KeyboardInterrupt:
+        print("\nProgram terminated by user.")

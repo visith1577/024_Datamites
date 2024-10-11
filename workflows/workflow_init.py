@@ -1,9 +1,8 @@
 from typing import List
 from llama_index.tools.tavily_research import TavilyToolSpec
-# from llama_index.utils.workflow import draw_all_possible_flows
 from llama_index.core.tools import FunctionTool
 from workflows.workflow import FunctionCallingAgent
-from workflows.workflow_rag import SubQuestionQueryEngine, prepare_query_engine
+from workflows.workflow_rag import SubQuestionQueryEngine
 from llama_index.llms.openai import OpenAI
 from pydantic import Field
 from exa_py import Exa
@@ -64,20 +63,14 @@ async def main(query: str):
 
     return ret['response']
 
-
-qt = None 
-
-async def rag_main(query: str):
+async def rag_main(query: str, qt):
 
     # draw_all_possible_flows(SubQuestionQueryEngine, "workflow_rag.html")
 
-    if qt is None:
-        qt = prepare_query_engine("documents")
-        
     engine = SubQuestionQueryEngine(timeout=120, verbose=True)
     
     llm = OpenAI(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         api_key=os.getenv("OPENAI_API_KEY"),
     )
     result = await engine.run(
@@ -87,4 +80,3 @@ async def rag_main(query: str):
     )
 
     return result
-

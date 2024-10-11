@@ -33,7 +33,7 @@ os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
 
 class SubQuestionQueryEngine(Workflow):
 
-    @step(pass_context=True)
+    @step(pass_context=True, num_workers=3)
     async def query(self, ctx: Context, ev: StartEvent) -> QueryEvent:
         if (hasattr(ev, "query")):
             ctx.data["original_query"] = ev.query
@@ -48,10 +48,15 @@ class SubQuestionQueryEngine(Workflow):
         response = ctx.data["llm"].complete(f"""
             Given a user question, and a list of tools, output a list of
             relevant sub-questions, such that the answers to all the
-            sub-questions put together will answer the question. Respond
+            sub-questions put together will answer the question. 
+            Role: An unbiased an informative political analyst.
+            you are collecting information about the current state of politics in srilanka for a user question.
             You will be asked questions about the politics in Srilanka.
             extra info: 
             political parties : UNP, SJB and NPP
+            presidential election year: September 21, 2024
+            parliamentary election: November 14, 2024                           
+
             in pure JSON without any markdown, like this:
             {{
                 "sub_questions": [
@@ -60,6 +65,7 @@ class SubQuestionQueryEngine(Workflow):
                     "What are claims made by the current president of srilanka?"
                 ]
             }}
+            Generate a maximum of 3 sub_questions that can fully cover the user question.
             Here is the user question: {ctx.data['original_query']}
 
             And here is the list of tools: {ctx.data['tools']}
@@ -97,7 +103,8 @@ class SubQuestionQueryEngine(Workflow):
         prompt = f"""
             You are given an overall question that has been split into sub-questions,
             each of which has been answered. Combine the answers to all the sub-questions
-            into a single answer to the original question.
+            into a comprehensive report to answer the original question.
+
 
             Original question: {ctx.data['original_query']}
 
@@ -153,16 +160,11 @@ def prepare_query_engine(documents_folder: str):
         subdir_path = os.path.join(documents_folder, subdir)
         if os.path.isdir(subdir_path):
             index_persist_path = f"./storage/{subdir}/"
-
+            storage_context = StorageContext.from_defaults(vector_store=vector_store)
             if os.path.exists(index_persist_path):
-                storage_context = StorageContext.from_defaults(vector_store=vector_store)
                 index = load_index_from_storage(storage_context)
             else:
                 input_files = [os.path.join(subdir_path, file) for file in os.listdir(subdir_path)]
-
-                for i in input_files:
-                    print(i)
-
                 documents = []
                 for file_path in input_files:
                     print(repr(file_path))
